@@ -29,7 +29,40 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     """Sérializer pour afficher les infos d'un utilisateur"""
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'filiere', 'niveau', 'photo', 'bio']
+        fields = [
+            'id', 'username', 'email', 'filiere', 'niveau', 'photo', 'bio',
+            'followers_count', 'following_count',
+        ]
         read_only_fields = ['id', 'email']
+
+    def get_followers_count(self, obj):
+        return obj.followers.count()
+
+    def get_following_count(self, obj):
+        return obj.following.count()
+
+from .models import Follow
+
+
+class UserPublicSerializer(serializers.ModelSerializer):
+    """Infos publiques d'un étudiant + compteurs de followers"""
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'filiere', 'niveau', 'photo', 'bio',
+            'followers_count', 'following_count',
+        ]
+
+    def get_followers_count(self, obj):
+        return obj.followers.count()
+
+    def get_following_count(self, obj):
+        return obj.following.count()

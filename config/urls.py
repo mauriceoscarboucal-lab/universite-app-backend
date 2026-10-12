@@ -17,6 +17,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
     path('api/', include('posts.urls')),   # <-- AJOUTE ÇA
+    path('api/stories/', include('stories.urls')),
 ]
 
 if settings.DEBUG:

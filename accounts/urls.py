@@ -1,18 +1,29 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .views import RegisterView, ProfileView
+from .views import (
+    RegisterView,
+    ProfileView,
+    UserDetailView,
+    FollowToggleView,
+    UserPostsView,
+    UserFollowersView,      # <-- AJOUTE
+    UserFollowingView,      # <-- AJOUTE
+)
 
 urlpatterns = [
-    # Inscription
+    # Auth
     path('register/', RegisterView.as_view(), name='register'),
-
-    # Connexion (retourne un token JWT)
     path('login/', TokenObtainPairView.as_view(), name='login'),
-
-    # Rafraîchir le token
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    # Profil (utilisateur connecté)
+    # Profil
     path('me/', ProfileView.as_view(), name='profile'),
+
+    # Autres utilisateurs
+    path('users/<int:user_id>/', UserDetailView.as_view(), name='user_detail'),
+    path('users/<int:user_id>/follow/', FollowToggleView.as_view(), name='follow_toggle'),
+    path('users/<int:user_id>/posts/', UserPostsView.as_view(), name='user_posts'),
+    path('users/<int:user_id>/followers/', UserFollowersView.as_view(), name='user_followers'),
+    path('users/<int:user_id>/following/', UserFollowingView.as_view(), name='user_following'),
 ]

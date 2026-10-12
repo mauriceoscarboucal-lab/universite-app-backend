@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'accounts',
     'posts',      # <-- AJOUTE ÇA
+    'stories',
 ]
 
 MIDDLEWARE = [

@@ -20,6 +20,8 @@ class PostSerializer(serializers.ModelSerializer):
     likes_count = serializers.IntegerField(read_only=True)
     comments_count = serializers.IntegerField(read_only=True)
     is_liked = serializers.SerializerMethodField()
+    is_following_author = serializers.SerializerMethodField()
+    is_my_post = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -27,13 +29,31 @@ class PostSerializer(serializers.ModelSerializer):
             'id', 'author', 'author_username', 'author_photo',
             'content', 'image',
             'likes_count', 'comments_count', 'is_liked',
+            'is_following_author',
+            'is_my_post',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'author', 'created_at', 'updated_at']
 
     def get_is_liked(self, obj):
-        """Est-ce que l'utilisateur connecté a liké ce post ?"""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.likes.filter(user=request.user).exists()
+        return False
+
+    def get_is_following_author(self, obj):
+        """Est-ce que l'utilisateur connecté suit l'auteur du post ?"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            from accounts.models import Follow
+            return Follow.objects.filter(
+                follower=request.user,
+                following=obj.author
+            ).exists()
+        return False
+    def get_is_my_post(self, obj):
+        """Est-ce que ce post appartient à l'utilisateur connecté ?"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.author_id == request.user.id
         return False
