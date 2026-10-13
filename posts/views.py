@@ -15,7 +15,27 @@ class PostViewSet(viewsets.ModelViewSet):
         return Post.objects.select_related('author').prefetch_related('likes', 'comments')
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        post = serializer.save(author=self.request.user)
+        images = self.request.FILES.getlist('images')
+        if images:
+            urls = []
+            for img in images:
+                from django.core.files.storage import default_storage
+                path = default_storage.save(f'posts/{img.name}', img)
+                url = default_storage.url(path)
+                urls.append(url)
+            post.images = urls
+            post.save()
+    
+    def destroy(self, request, *args, **kwargs):
+        """Seul l'auteur peut supprimer son post"""
+        post = self.get_object()
+        if post.author != request.user:
+            return Response(
+                {'error': 'Tu ne peux pas supprimer ce post'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
 
     def get_serializer_context(self):
         return {'request': self.request}
@@ -31,7 +51,6 @@ class PostViewSet(viewsets.ModelViewSet):
         else:
             status_str = 'liked'
 
-        # ⚠️ Recharger le post depuis la base pour avoir le bon compte
         post.refresh_from_db()
 
         return Response({

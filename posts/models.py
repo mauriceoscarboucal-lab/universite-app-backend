@@ -3,7 +3,6 @@ from django.conf import settings
 
 
 class Post(models.Model):
-    """Une publication postée par un étudiant"""
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -11,6 +10,13 @@ class Post(models.Model):
     )
     content = models.TextField(blank=True)
     image = models.ImageField(upload_to='posts/', blank=True, null=True)
+    images = models.JSONField(default=list, blank=True)   # <-- AJOUTE (liste URLs)
+    background_color = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        help_text='Couleur de fond pour les posts texte'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
