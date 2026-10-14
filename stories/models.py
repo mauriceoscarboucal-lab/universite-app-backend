@@ -22,7 +22,6 @@ class Story(models.Model):
         ordering = ['-created_at']
 
     def save(self, *args, **kwargs):
-        # À la création, on définit l'expiration à +24h
         if not self.expires_at:
             self.expires_at = timezone.now() + timedelta(hours=24)
         super().save(*args, **kwargs)
@@ -32,3 +31,28 @@ class Story(models.Model):
 
     def __str__(self):
         return f"Story de {self.author.username} - {self.created_at:%d/%m %H:%M}"
+
+
+class StoryView(models.Model):
+    """
+    Trace qu'un utilisateur a vu une story.
+    Un utilisateur ne peut voir une story qu'une seule fois (unique).
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='story_views'
+    )
+    story = models.ForeignKey(
+        Story,
+        on_delete=models.CASCADE,
+        related_name='views'
+    )
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'story')
+        ordering = ['-viewed_at']
+
+    def __str__(self):
+        return f"{self.user.username} a vu story #{self.story.id}"

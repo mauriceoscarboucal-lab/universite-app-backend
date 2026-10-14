@@ -18,6 +18,7 @@ urlpatterns = [
     path('api/auth/', include('accounts.urls')),
     path('api/', include('posts.urls')),   # <-- AJOUTE ÇA
     path('api/stories/', include('stories.urls')),
+    path('api/chat/', include('messaging.urls')),
 ]
 
 if settings.DEBUG:

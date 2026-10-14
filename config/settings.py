@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'accounts',
     'posts',      # <-- AJOUTE ÇA
     'stories',
+    'messaging',
 ]
 
 MIDDLEWARE = [
