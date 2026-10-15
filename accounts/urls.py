@@ -7,8 +7,9 @@ from .views import (
     UserDetailView,
     FollowToggleView,
     UserPostsView,
-    UserFollowersView,      # <-- AJOUTE
-    UserFollowingView,      # <-- AJOUTE
+    UserFollowersView,
+    UserFollowingView,
+    UserSearchView,
 )
 
 urlpatterns = [
@@ -19,6 +20,9 @@ urlpatterns = [
 
     # Profil
     path('me/', ProfileView.as_view(), name='profile'),
+
+    # Recherche (⚠️ AVANT users/<int:user_id>)
+    path('users/search/', UserSearchView.as_view(), name='user_search'),
 
     # Autres utilisateurs
     path('users/<int:user_id>/', UserDetailView.as_view(), name='user_detail'),

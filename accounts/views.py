@@ -3,6 +3,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 from .serializers import (
     RegisterSerializer,
@@ -119,4 +120,23 @@ class UserFollowingView(APIView):
         user = get_object_or_404(User, id=user_id)
         following = User.objects.filter(followers__follower=user)
         serializer = UserPublicSerializer(following, many=True)
+        return Response(serializer.data)
+
+class UserSearchView(APIView):
+    """Recherche d'utilisateurs par nom ou filière"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        query = request.query_params.get('q', '').strip()
+
+        if not query:
+            users = User.objects.exclude(id=request.user.id)[:50]
+        else:
+            users = User.objects.filter(
+                Q(username__icontains=query) |
+                Q(filiere__icontains=query) |
+                Q(niveau__icontains=query)
+            ).exclude(id=request.user.id)[:50]
+
+        serializer = UserPublicSerializer(users, many=True)
         return Response(serializer.data)

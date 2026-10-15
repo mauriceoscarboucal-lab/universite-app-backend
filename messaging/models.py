@@ -61,6 +61,11 @@ class Message(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
+    is_delivered = models.BooleanField(default=False)      # <-- AJOUTE
+    # ⬇️ NOUVEAU : gestion suppression / modification
+    deleted_for_all = models.BooleanField(default=False)      # supprimé pour tout le monde
+    deleted_for = models.JSONField(default=list, blank=True)  # liste d'user_ids qui l'ont supprimé pour eux
+    edited = models.BooleanField(default=False)               # message modifié
 
     class Meta:
         ordering = ['created_at']  # du plus ancien au plus récent
