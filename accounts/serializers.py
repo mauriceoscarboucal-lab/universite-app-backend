@@ -5,13 +5,16 @@ User = get_user_model()
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    """Sérializer pour l'inscription d'un étudiant"""
     password = serializers.CharField(write_only=True, min_length=8)
     password2 = serializers.CharField(write_only=True, min_length=8)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password2', 'filiere', 'niveau']
+        fields = [
+            'username', 'email', 'password', 'password2',
+            'first_name', 'last_name',
+            'filiere', 'niveau', 'date_of_birth',
+        ]
 
     def validate(self, data):
         if data['password'] != data['password2']:
@@ -22,7 +25,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data.pop('password2')
         password = validated_data.pop('password')
         user = User(**validated_data)
-        user.set_password(password)   # chiffre le mot de passe
+        user.set_password(password)
         user.save()
         return user
 
@@ -35,7 +38,10 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'filiere', 'niveau', 'photo', 'bio',
+            'id', 'username', 'email',
+            'first_name', 'last_name',
+            'filiere', 'niveau', 'photo', 'bio',
+            'date_of_birth',
             'followers_count', 'following_count',
         ]
         read_only_fields = ['id', 'email']
