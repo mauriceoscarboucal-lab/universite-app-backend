@@ -8,14 +8,14 @@ class User(AbstractUser):
     niveau = models.CharField(max_length=50, blank=True)
     photo = models.ImageField(upload_to='photos/', blank=True, null=True)
     bio = models.TextField(blank=True)
-    date_of_birth = models.DateField(null=True, blank=True)   # <-- AJOUTE
+    date_of_birth = models.DateField(null=True, blank=True)
 
-    # L'email sera utilisé pour se connecter
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
-
-    def __str__(self):
-        return f"{self.username} ({self.email})"
+    # ⬇️ NOUVEAU : vérification email
+    email_verified = models.BooleanField(default=False)
+    verification_code = models.CharField(max_length=6, blank=True)
+    verification_expires = models.DateTimeField(null=True, blank=True)
+    # ⬇️ NOUVEAU : profil complété
+    profile_completed = models.BooleanField(default=False)
 
 class Follow(models.Model):
     """

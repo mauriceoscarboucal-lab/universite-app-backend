@@ -1,7 +1,27 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Serializer de connexion qui accepte email OU username.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # On accepte email comme identifiant
+        self.fields['email'] = serializers.CharField()
+        self.fields['username'].required = False
+        self.fields['email'].required = True
+
+    def validate(self, attrs):
+        # On utilise email comme username pour l'authentification
+        attrs['username'] = attrs.get('email')
+        return super().validate(attrs)
+
 
 User = get_user_model()
+
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -42,6 +62,7 @@ class UserSerializer(serializers.ModelSerializer):
             'first_name', 'last_name',
             'filiere', 'niveau', 'photo', 'bio',
             'date_of_birth',
+            'email_verified', 'profile_completed',   # <-- AJOUTE
             'followers_count', 'following_count',
         ]
         read_only_fields = ['id', 'email']

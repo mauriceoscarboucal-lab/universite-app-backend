@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import EmailTokenObtainPairSerializer
 
 from .serializers import (
     RegisterSerializer,
@@ -14,6 +16,9 @@ from .models import Follow
 
 User = get_user_model()
 
+class EmailTokenObtainPairView(TokenObtainPairView):
+    """Vue de login qui utilise email au lieu de username"""
+    serializer_class = EmailTokenObtainPairSerializer
 
 class RegisterView(generics.CreateAPIView):
     """Inscription d'un nouvel étudiant"""
@@ -140,3 +145,114 @@ class UserSearchView(APIView):
 
         serializer = UserPublicSerializer(users, many=True)
         return Response(serializer.data)
+
+import random
+from django.utils import timezone
+from datetime import timedelta
+from django.core.mail import send_mail
+from django.conf import settings
+
+
+class SendVerificationCodeView(APIView):
+    """Envoie un code de vérification à 6 chiffres par email"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+
+        if user.email_verified:
+            return Response({'status': 'already_verified'})
+
+        # Génère un code à 6 chiffres
+        code = str(random.randint(100000, 999999))
+        user.verification_code = code
+        user.verification_expires = timezone.now() + timedelta(minutes=15)
+        user.save()
+
+        # Envoie l'email
+        try:
+            send_mail(
+                subject='Baobab - Vérifie ton email',
+                message=f'''
+Salut {user.first_name or user.username} !
+
+Bienvenue sur Baobab 🌳
+
+Voici ton code de vérification : {code}
+
+Il est valable 15 minutes.
+
+L'équipe Baobab
+                ''',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+            return Response({'status': 'sent', 'email': user.email})
+        except Exception as e:
+            return Response(
+                {'error': f'Erreur envoi email : {e}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class VerifyEmailView(APIView):
+    """Vérifie le code et marque l'email comme vérifié"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        code = request.data.get('code', '').strip()
+
+        if not code:
+            return Response(
+                {'error': 'Code requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if user.email_verified:
+            return Response({'status': 'already_verified'})
+
+        if not user.verification_code:
+            return Response(
+                {'error': 'Aucun code envoyé'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if timezone.now() > user.verification_expires:
+            return Response(
+                {'error': 'Code expiré. Renvoie un nouveau code.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if code != user.verification_code:
+            return Response(
+                {'error': 'Code incorrect'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ✅ Vérifié !
+        user.email_verified = True
+        user.verification_code = ''
+        user.verification_expires = None
+        user.save()
+
+        return Response({'status': 'verified'})
+
+
+class CompleteProfileView(APIView):
+    """Marque le profil comme complété"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        user.profile_completed = True
+
+        # On met à jour ce que l'utilisateur a envoyé
+        if 'bio' in request.data:
+            user.bio = request.data['bio']
+        if 'photo' in request.FILES:
+            user.photo = request.FILES['photo']
+
+        user.save()
+        return Response({'status': 'profile_completed'})

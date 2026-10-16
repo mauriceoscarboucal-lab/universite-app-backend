@@ -108,6 +108,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 AUTH_USER_MODEL = 'accounts.User'
+AUTHENTICATION_BACKENDS = [
+    'accounts.auth_backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
@@ -157,3 +161,11 @@ SIMPLE_JWT = {
 # ⚠️ En développement uniquement : autorise toutes les origines
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+# 📧 Email (mode console = le code s'affiche dans le terminal Django)
+MAILERS = {
+    'default': {
+        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+    },
+}
+DEFAULT_FROM_EMAIL = 'Baobab <noreply@baobab.sn>'
