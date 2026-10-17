@@ -256,3 +256,24 @@ class CompleteProfileView(APIView):
 
         user.save()
         return Response({'status': 'profile_completed'})
+
+class UploadPhotoView(APIView):
+    """Permet à l'utilisateur de mettre à jour sa photo de profil"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+
+        if 'photo' not in request.FILES:
+            return Response(
+                {'error': 'Aucune photo fournie'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.photo = request.FILES['photo']
+        user.save()
+
+        return Response({
+            'status': 'photo_updated',
+            'photo_url': user.photo.url if user.photo else None
+        })

@@ -19,9 +19,17 @@ class StoryListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        # On garde -created_at pour trier les UTILISATEURS (les plus récents en premier dans la barre)
+        from accounts.models import Follow
+        from django.db.models import Q
+
+        # Récupérer les IDs des personnes que je suis
+        following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+
+        # Je vois mes propres stories + celles des gens que je suis
         stories = Story.objects.filter(
             expires_at__gt=timezone.now()
+        ).filter(
+            Q(author=request.user) | Q(author_id__in=following_ids)
         ).select_related('author').order_by('-created_at')
 
         # On les groupe par auteur

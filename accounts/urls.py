@@ -5,7 +5,7 @@ from .views import EmailTokenObtainPairView
 from .views import (
     RegisterView, ProfileView, UserDetailView, FollowToggleView,
     UserPostsView, UserFollowersView, UserFollowingView, UserSearchView,
-    SendVerificationCodeView, VerifyEmailView, CompleteProfileView,
+    SendVerificationCodeView, VerifyEmailView, CompleteProfileView,UploadPhotoView,
 )
 
 urlpatterns = [
@@ -30,5 +30,6 @@ urlpatterns = [
     path('send-verification/', SendVerificationCodeView.as_view(), name='send_verification'),
     path('verify-email/', VerifyEmailView.as_view(), name='verify_email'),
     path('complete-profile/', CompleteProfileView.as_view(), name='complete_profile'),
+    path('upload-photo/', UploadPhotoView.as_view(), name='upload_photo'),
 
 ]
