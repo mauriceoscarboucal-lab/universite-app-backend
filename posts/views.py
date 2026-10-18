@@ -1,9 +1,9 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
-from .models import Post, Like, Comment
-from .serializers import PostSerializer, CommentSerializer
+from rest_framework.views import APIView
+from .models import Post, Like, Comment, Notification
+from .serializers import PostSerializer, CommentSerializer, NotificationSerializer
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -48,8 +48,18 @@ class PostViewSet(viewsets.ModelViewSet):
         if not created:
             like.delete()
             status_str = 'unliked'
+            # Optionnel : supprimer la notification si on retire le like
+            Notification.objects.filter(sender=request.user, recipient=post.author, post=post, notification_type='like').delete()
         else:
             status_str = 'liked'
+            # 🔔 Créer la notification si ce n'est pas mon propre post
+            if post.author != request.user:
+                Notification.objects.create(
+                    recipient=post.author,
+                    sender=request.user,
+                    notification_type='like',
+                    post=post
+                )
 
         post.refresh_from_db()
 
@@ -67,8 +77,31 @@ class PostViewSet(viewsets.ModelViewSet):
             serializer = CommentSerializer(comments, many=True)
             return Response(serializer.data)
 
+                # POST → créer un commentaire
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(author=request.user, post=post)
+            # 🔔 Créer la notification
+            if post.author != request.user:
+                Notification.objects.create(
+                    recipient=post.author,
+                    sender=request.user,
+                    notification_type='comment',
+                    post=post
+                )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class NotificationListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        notifications = Notification.objects.filter(recipient=request.user)
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        # Marquer tout comme lu
+        Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+        return Response({'status': 'read'})

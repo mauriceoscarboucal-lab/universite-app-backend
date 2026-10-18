@@ -76,3 +76,19 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"Commentaire de {self.author.username}"
+
+class Notification(models.Model):
+    TYPES = (
+        ('like', 'Like'),
+        ('comment', 'Commentaire'),
+        ('follow', 'Abonnement'),
+    )
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_notifications')
+    notification_type = models.CharField(max_length=20, choices=TYPES)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, null=True, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']

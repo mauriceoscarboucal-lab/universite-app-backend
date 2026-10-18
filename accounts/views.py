@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import EmailTokenObtainPairSerializer
+from posts.models import Notification
 
 from .serializers import (
     RegisterSerializer,
@@ -79,10 +80,20 @@ class FollowToggleView(APIView):
 
         if not created:
             follow.delete()
+            # Optionnel : supprimer la notification si on se désabonne
+            Notification.objects.filter(sender=request.user, recipient=target, notification_type='follow').delete()
             return Response({
                 'status': 'unfollowed',
                 'followers_count': target.followers.count(),
             })
+        
+        # 🔔 Créer la notification d'abonnement
+        Notification.objects.create(
+            recipient=target,
+            sender=request.user,
+            notification_type='follow'
+        )
+        
         return Response({
             'status': 'followed',
             'followers_count': target.followers.count(),

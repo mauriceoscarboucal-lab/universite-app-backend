@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Post, Like, Comment
+from .models import Post, Like, Comment, Notification
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -59,3 +60,11 @@ class PostSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.author_id == request.user.id
         return False
+
+class NotificationSerializer(serializers.ModelSerializer):
+    sender_username = serializers.CharField(source='sender.username', read_only=True)
+    sender_photo = serializers.ImageField(source='sender.photo', read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = ['id', 'sender', 'sender_username', 'sender_photo', 'notification_type', 'post', 'is_read', 'created_at']
