@@ -149,10 +149,17 @@ class UserSearchView(APIView):
             users = User.objects.exclude(id=request.user.id)[:50]
         else:
             users = User.objects.filter(
-                Q(username__icontains=query) |
+                Q(username__iexact=query) |      # Correspondance EXACTE (insensible à la casse)
+                Q(username__icontains=query) |   # Recherche partielle
                 Q(filiere__icontains=query) |
                 Q(niveau__icontains=query)
-            ).exclude(id=request.user.id)[:50]
+            ).exclude(id=request.user.id)
+
+            # On trie pour mettre les correspondances exactes en premier
+            users = sorted(
+                users,
+                key=lambda u: u.username.lower() != query.lower()
+            )[:50]
 
         serializer = UserPublicSerializer(users, many=True)
         return Response(serializer.data)

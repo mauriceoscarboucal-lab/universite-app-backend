@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -12,10 +12,37 @@ class PostViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Post.objects.select_related('author').prefetch_related('likes', 'comments')
+        from django.db.models import Q
+        from accounts.models import Follow
+
+        user = self.request.user
+        # Récupérer les IDs des personnes que je suis
+        following_ids = Follow.objects.filter(follower=user).values_list('following_id', flat=True)
+
+        # Règles de visibilité :
+        # 1. Je vois mes propres posts
+        # 2. Je vois les posts publics
+        # 3. Je vois les posts "abonnés" des gens que je suis
+        return Post.objects.select_related('author').prefetch_related('likes', 'comments').filter(
+            Q(author=user) | 
+            Q(audience='public') | 
+            Q(audience='followers', author_id__in=following_ids)
+        ).order_by('-created_at')
 
     def perform_create(self, serializer):
+        import re
         post = serializer.save(author=self.request.user)
+        
+        # 🔍 Extraire les hashtags (#) et les mentions (@)
+        content = post.content
+        hashtags = re.findall(r'#(\w+)', content)
+        mentions = re.findall(r'@(\w+)', content)
+        
+        # Mettre à jour le post
+        post.hashtags = hashtags
+        post.mentions = mentions
+        
+        # 📸 Gérer plusieurs images
         images = self.request.FILES.getlist('images')
         if images:
             urls = []
@@ -25,7 +52,8 @@ class PostViewSet(viewsets.ModelViewSet):
                 url = default_storage.url(path)
                 urls.append(url)
             post.images = urls
-            post.save()
+            
+        post.save()
     
     def destroy(self, request, *args, **kwargs):
         """Seul l'auteur peut supprimer son post"""
@@ -105,3 +133,15 @@ class NotificationListView(APIView):
         # Marquer tout comme lu
         Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
         return Response({'status': 'read'})
+
+class PostsByHashtagView(generics.ListAPIView):
+    """Renvoie les posts qui contiennent un hashtag spécifique"""
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PostSerializer
+
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+    def get_queryset(self):
+        tag = self.kwargs['tag']
+        return Post.objects.filter(hashtags__contains=[tag]).order_by('-created_at')

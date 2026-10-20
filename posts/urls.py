@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import PostViewSet, NotificationListView
+from .views import PostViewSet, NotificationListView, PostsByHashtagView
 
 router = DefaultRouter()
 # ⚠️ On garde le préfixe 'posts' pour que l'API réponde sur /api/posts/
@@ -10,4 +10,5 @@ urlpatterns = [
     # ⚠️ L'URL pour les notifications sera /api/posts/notifications/
     path('posts/notifications/', NotificationListView.as_view(), name='notifications'),
     path('', include(router.urls)),
+    path('posts/hashtags/<str:tag>/', PostsByHashtagView.as_view(), name='posts_by_hashtag'),
 ]

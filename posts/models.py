@@ -17,6 +17,10 @@ class Post(models.Model):
         default='',
         help_text='Couleur de fond pour les posts texte'
     )
+    # ⬇️ NOUVEAUX CHAMPS
+    audience = models.CharField(max_length=20, default='public') # public, followers, private
+    hashtags = models.JSONField(default=list, blank=True) # Liste des hashtags
+    mentions = models.JSONField(default=list, blank=True) # Liste des usernames mentionnés
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
